@@ -1,7 +1,7 @@
 #include "../include/arvore_b.h"
 
-void Inicializa(TipoApontador Arvore){
-    Arvore = NULL;
+void Inicializa(TipoApontador *Arvore){
+    *Arvore = NULL;
 }
 
 void InsereAB(tipoitem Reg,TipoApontador *Ap,int *comparacoes){
@@ -19,59 +19,64 @@ void InsereAB(tipoitem Reg,TipoApontador *Ap,int *comparacoes){
     }
 }
 
-void Ins(tipoitem Reg,TipoApontador Ap,short *Cresceu,tipoitem *RegRetorno,TipoApontador *ApRetorno,int *comparacoes){
-    long i=1; 
+void Ins(tipoitem Reg, TipoApontador Ap, short *Cresceu, tipoitem *RegRetorno, TipoApontador *ApRetorno, int *comparacoes){
+    long i = 1; 
 
     TipoApontador ApTemp;
-    if(Ap == NULL){//ou nao existe a arvore ou chegou nas folhas
-        *Cresceu=1;
+    if (Ap == NULL) {  // Ou não existe a árvore ou chegou nas folhas
+        *Cresceu = 1;
         (*RegRetorno) = Reg;
         (*ApRetorno) = NULL;
         return;
     }
-    while(i < Ap->n && Reg.chave > Ap->r[i-1].chave){//encontra local correto para inserçao 
+
+    while (i < Ap->n && Reg.chave > Ap->r[i - 1].chave) {  // Verifica os índices
         (*comparacoes)++;
         i++;
     }
 
-    if(Reg.chave == Ap->r[i-1].chave){//ja existe
+    if (i > 0 && Reg.chave == Ap->r[i - 1].chave) {  // Verifique se o índice não é inválido
         (*comparacoes)++;
-        *Cresceu=0;
+        *Cresceu = 0;
         return;
     }
-    if(Reg.chave < Ap->r[i-1].chave){//caso seja menor tem que caminhar pelo ponteiro a esquerda do item maior que ele
+
+    if (i > 0 && Reg.chave < Ap->r[i - 1].chave) {  // Verifique se o índice não é inválido
         (*comparacoes)++;
         i--;
     }
 
-    Ins(Reg,Ap->p[i],Cresceu,RegRetorno,ApRetorno,comparacoes);//faz recursao ate encontrar local de inserçao
-    if(!(*Cresceu))
-        return;
-    if(Ap->n < MM){//caso pagina cabe item
-        InsereNaPagina(Ap,*RegRetorno,*ApRetorno,comparacoes);
-        *Cresceu=0;
+    Ins(Reg, Ap->p[i], Cresceu, RegRetorno, ApRetorno, comparacoes);  // Faz recursão até encontrar local de inserção
+    if (!(*Cresceu)) return;
+
+    if (Ap->n < MM) {  // Caso página caiba item
+        InsereNaPagina(Ap, *RegRetorno, *ApRetorno, comparacoes);
+        *Cresceu = 0;
         return;
     }
-    ApTemp=malloc(sizeof(TipoPagina));//criacao de nova pagina pois a que deveria ser inserirido esta lotada
-    ApTemp->n=0;
-    ApTemp->p[0]=NULL;
 
-    if(i< (M+1)){//saber se o item ficara na nova pagina ou na pagina existente
-        InsereNaPagina(ApTemp,Ap->r[MM-1],Ap->p[MM],comparacoes);
+    ApTemp = malloc(sizeof(TipoPagina));  // Criação de nova página pois a que deveria ser inserida está lotada
+    ApTemp->n = 0;
+    ApTemp->p[0] = NULL;
+
+    if (i < (M + 1)) {  // Saber se o item ficará na nova página ou na página existente
+        InsereNaPagina(ApTemp, Ap->r[MM - 1], Ap->p[MM], comparacoes);
         Ap->n--;
-        InsereNaPagina(Ap,*RegRetorno,*ApRetorno,comparacoes);
+        InsereNaPagina(Ap, *RegRetorno, *ApRetorno, comparacoes);
+    } else {
+        InsereNaPagina(ApTemp, *RegRetorno, *ApRetorno, comparacoes);
     }
-    else    
-        InsereNaPagina(ApTemp,*RegRetorno,*ApRetorno,comparacoes);
 
-    for(int j=M+2;j<=MM;j++)//move os itens para a nova pagina
-        InsereNaPagina(ApTemp,Ap->r[j-1],Ap->p[j],comparacoes);
+    for (int j = M + 2; j <= MM; j++) {  // Move os itens para a nova página
+        InsereNaPagina(ApTemp, Ap->r[j - 1], Ap->p[j], comparacoes);
+    }
 
-    Ap->n=M;//atualiza o tamanho da nova pagina
-    ApTemp->p[0]=Ap->p[M+1];//primeiro filho da nova pagina é o ultimo da pagina que foi dividida
-    *RegRetorno=Ap->r[M];//registro que deve subir
-    *ApRetorno=ApTemp;//filho a direita do que vai subir
+    Ap->n = M;  // Atualiza o tamanho da nova página
+    ApTemp->p[0] = Ap->p[M + 1];  // Primeiro filho da nova página é o último da página que foi dividida
+    *RegRetorno = Ap->r[M];  // Registro que deve subir
+    *ApRetorno = ApTemp;  // Filho à direita do que vai subir
 }
+
 
 void InsereNaPagina(TipoApontador Ap,tipoitem Reg,TipoApontador Apdir,int *comparacoes){
 
