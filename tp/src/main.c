@@ -98,7 +98,7 @@ int main(int argc, char *argv[]) {
         fclose(arq);
         break;
     }
-    case 2:  // Árvore Binária Externa
+    case 2:  // Árvore Binária 
     {
         FILE *arquivo2 = fopen("../output/arvorebin.bin", "wb+");
         tipoitem temp;
@@ -132,11 +132,11 @@ int main(int argc, char *argv[]) {
         fclose(arquivo2);
         break;
     }
-    case 3:  // Árvore Binária
+    case 3:  // Árvore B
     {
         tipoitem temp;
         TipoApontador Ap = NULL;
-        Inicializa(Ap);
+        Inicializa(&Ap);
         int cont = 0;
 
         while (fread(&temp, sizeof(tipoitem), 1, arq) == 1 && cont < qtd) {
