@@ -1,7 +1,7 @@
 #include "../include/arvore_b.h"
 
 void Inicializa(TipoApontador *Arvore){
-    *Arvore = NULL;
+    Arvore = NULL;
 }
 
 void InsereAB(tipoitem Reg,TipoApontador *Ap,int *comparacoes){

@@ -41,26 +41,26 @@ int main(int argc, char *argv[]) {
         printf("Situações:\n1: Ordenado crescentemente\n2: Ordenado decrescentemente\n3: Ordenado aleatoriamente\n");
         return 0;
     }
-
+int acessos = 0, comparacoes = 0, contarq = 0;
     FILE *arq;
     tipoitem aux;
-    int acessos = 0, comparacoes = 0, contarq = 0;
-
+    dados cont = {0, 0};  // Inicializa os contadores com zero
+srand(time(NULL));
     // Abrindo o arquivo de acordo com a situação especificada
     if (situacao == 1) {
-        arq = fopen("./data/crescente.bin", "rb");
+        arq = fopen("./data/crescente.bin", "w+");
         gerarCrescente(qtd);
 
     } else if (situacao == 2) {
-        arq = fopen("./data/decrescente.bin", "rb");
+        arq = fopen("./data/decrescente.bin", "w+");
         gerarDecrescente(qtd);
     } else {
-        arq = fopen("./data/aleatorio.bin", "rb");
+        arq = fopen("./data/aleatorio.bin", "w+");
         gerarAleatorio(qtd);
     }
 
     if (arq == NULL) {
-        printf("Erro na abertura do arquivo. Verifique o caminho e tente novamente.\n");
+        printf("Erro 55na abertura do arquivo. Verifique o caminho e tente novamente.\n");
         return 0;
     }
 
@@ -78,19 +78,10 @@ int main(int argc, char *argv[]) {
     switch (metodo) {
     case 1:  // Pesquisa Sequencialmente Indexada
     {
-        int tabela[MAXTABELA];
-        tipoitem x[ITENSPAGINA];
-        int pos = 0, cont = 0;
-
-        while (fread(&x, sizeof(tipoitem), ITENSPAGINA, arq) > 0 && cont < qtd) {
-            tabela[pos] = x[0].chave;
-            pos++;
-            cont += ITENSPAGINA;
-            acessos++;
-        }
-        fseek(arq, 0, SEEK_SET);  // Reposiciona o ponteiro de leitura
-
-        if (pesquisaPSI(tabela, pos, chave, qtd, arq, &acessos, &comparacoes)) {
+        
+        
+        
+        if (acesso_sequencial_indexado(qtd, chave, &cont,arq)==1){
             printf("Registro de código %d foi localizado\n", chave);
         } else {
             printf("Registro de código %d não foi localizado\n", chave);
@@ -187,3 +178,4 @@ int main(int argc, char *argv[]) {
 
     return 0;
 }
+

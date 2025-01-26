@@ -4,6 +4,7 @@
 #include "registro.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include <arvore_b.h>
 
 typedef struct TipoPagina *TipoApontador;
 
@@ -13,7 +14,7 @@ typedef struct TipoPagina {
   TipoApontador p[MM + 1];
 } TipoPagina;
 
-void Inicializa(TipoApontador Arvore);
+void Inicializa(TipoApontador *Arvore);
 
 void InsereAB(tipoitem Reg, TipoApontador *Ap, int *comparacoes);
 

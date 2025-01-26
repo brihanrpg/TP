@@ -1,68 +1,64 @@
+#include <stdio.h>
+#include <stdlib.h>
 #include "../include/acesso_sequencial.h"
 
-int pesquisaPSI(int tab[],int tam,int chave,int qtd,FILE *arq,int *acessos,int *comparacoes){
-    rewind(arq);
-    tipoitem pagina[ITENSPAGINA];
-    int i,quantitens;
-    long desloc;
-
-    i=0;
-
-    while(i < tam && tab[i] <= chave)//i vai ate a possivel pagina do registro
-       i++;
-    (*comparacoes)+=i;
-    if(i == 0)//nao tem nenhuma pagina
+int acesso_sequencial_indexado(int qtd, int chave, dados *cont, FILE *arq) {
+    tipoitem item;
+    int *tab = malloc(qtd * sizeof(int)); // Alocação dinâmica para a tabela de índices
+    if (tab == NULL) {
+        printf("Erro ao alocar memória para a tabela de índices.\n");
         return 0;
-    else {
-        if(i<tam)
-            quantitens = ITENSPAGINA;
-        else{
-            //fseek(arq , 0, SEEK_END);
-            quantitens=qtd%ITENSPAGINA;//se qtd de itens nao for multiplo da qtd por pagina a ultima pagina esta "incompleta"
-            if(quantitens == 0)
-                quantitens=ITENSPAGINA;
-        }
-        if (i - 1 < 0) {
-          printf("Erro: deslocamento negativo no arquivo.\n");
-          return 0;
-        }
-
-        desloc = (i-1) * ITENSPAGINA *sizeof(tipoitem);
-        fseek (arq, desloc,SEEK_SET);
-        if (fread(&pagina, sizeof(tipoitem), quantitens, arq) != quantitens) {
-            printf("Erro ao ler os dados do arquivo.\n");
-            return 0;
-        }
-        (*acessos)++;
-        int retorno=PesquisaBinaria(pagina,0,quantitens-1,chave,acessos,comparacoes);//pesquisa pelo item dentro da pagina
-        if(retorno == -1)
-            return 0;
-        else 
-            return 1;
-
     }
-}
 
-int PesquisaBinaria(tipoitem *pagina,int esq,int dir,int x,int *acessos,int *comparacoes){
-  
-  int meio=(int)(esq+dir)/2;
-  if (meio < 0 || meio >= ITENSPAGINA) {
-    printf("Erro: índice fora dos limites do array.\n");
-    return -1;
-}
-  if(esq > dir)
-    return -1;
+    // Abre o arquivo binário para leitura
+    arq = fopen("./data/crescente.bin", "r+");
+    if (arq == NULL) {
+        printf("Erro na abertura do arquivo!\n");
+        free(tab);
+        return 0;
+    }
 
-  else if(x < pagina[meio].chave){
-    (*comparacoes)++;
-    return PesquisaBinaria(pagina, esq,meio-1, x,acessos,comparacoes);
-  }
+    // Gera a tabela sequencial de índices
+    rewind(arq); // Garante que a leitura comece no início do arquivo
+    for (int i = 0; i < qtd; i++) {
+        if (fread(&item, sizeof(tipoitem), 1, arq) == 1) {
+            cont->acessos++;
+            tab[i] = item.chave; // Armazena a chave na tabela de índices
+        } else {
+            break;
+        }
+    }
 
-  else if(x > pagina[meio].chave){
-    (*comparacoes)++;
-    return PesquisaBinaria(pagina, meio+1,dir, x,acessos,comparacoes);
-  }
+    // Realiza a busca com divisão e conquista
+    int esquerda = 0, direita = qtd - 1;
+    while (esquerda <= direita) {
+        int meio = (esquerda + direita) / 2;
+        cont->comparacoes++;
 
-  else 
-    return meio;
+        if (tab[meio] == chave) {
+            // Chave encontrada no índice, busca o registro correspondente
+            fseek(arq, meio * sizeof(tipoitem), SEEK_SET);
+            fread(&item, sizeof(tipoitem), 1, arq);
+            cont->acessos++;
+            printf("\nChave encontrada: %d\nDado1: %ld\nDado2: %s\n", item.chave, item.dado1, item.dado2);
+            printf("Número de transferências (leitura): %d\n", cont->acessos);
+            printf("Número de comparações: %d\n", cont->comparacoes);
+            free(tab);
+            fclose(arq);
+            return 1;
+        }
+
+        if (tab[meio] < chave) {
+            esquerda = meio + 1;
+        } else {
+            direita = meio - 1;
+        }
+    }
+
+    printf("Chave não encontrada!\n");
+    printf("Número de transferências (leitura): %d\n", cont->acessos);
+    printf("Número de comparações: %d\n", cont->comparacoes);
+    free(tab);
+    fclose(arq);
+    return 0;
 }
