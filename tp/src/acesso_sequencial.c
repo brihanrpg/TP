@@ -2,7 +2,22 @@
 #include <stdlib.h>
 #include "../include/acesso_sequencial.h"
 
-int acesso_sequencial_indexado(int qtd, int chave, dados *cont, FILE *arq) {
+// Função auxiliar para gerar a tabela de índices
+int gerar_tabela_indices(FILE *arq, int *tab, int qtd, dados *cont) {
+    tipoitem item;
+    for (int i = 0; i < qtd; i++) {
+        if (fread(&item, sizeof(tipoitem), 1, arq) == 1) {
+            cont->acessos++;
+            tab[i] = item.chave; // Armazena a chave na tabela de índices
+        } else {
+            return 0; // Falha ao ler o registro
+        }
+    }
+    return 1; // Sucesso
+}
+
+// Função principal de acesso sequencial indexado com busca binária
+int acesso_sequencial_indexado(int qtd, int chave, dados *cont, const char *nome_arquivo) {
     tipoitem item;
     int *tab = malloc(qtd * sizeof(int)); // Alocação dinâmica para a tabela de índices
     if (tab == NULL) {
@@ -11,32 +26,29 @@ int acesso_sequencial_indexado(int qtd, int chave, dados *cont, FILE *arq) {
     }
 
     // Abre o arquivo binário para leitura
-    arq = fopen("./data/crescente.bin", "r+");
+    FILE *arq = fopen(nome_arquivo, "rb");
     if (arq == NULL) {
-        printf("Erro na abertura do arquivo!\n");
+        printf("Erro ao abrir o arquivo: %s\n", nome_arquivo);
         free(tab);
         return 0;
     }
 
     // Gera a tabela sequencial de índices
-    rewind(arq); // Garante que a leitura comece no início do arquivo
-    for (int i = 0; i < qtd; i++) {
-        if (fread(&item, sizeof(tipoitem), 1, arq) == 1) {
-            cont->acessos++;
-            tab[i] = item.chave; // Armazena a chave na tabela de índices
-        } else {
-            break;
-        }
+    if (!gerar_tabela_indices(arq, tab, qtd, cont)) {
+        printf("Erro ao gerar a tabela de índices a partir do arquivo.\n");
+        free(tab);
+        fclose(arq);
+        return 0;
     }
 
-    // Realiza a busca com divisão e conquista
+    // Realiza a busca binária na tabela de índices
     int esquerda = 0, direita = qtd - 1;
     while (esquerda <= direita) {
-        int meio = (esquerda + direita) / 2;
+        int meio = esquerda + (direita - esquerda) / 2; // Evita overflow ao calcular o meio
         cont->comparacoes++;
 
         if (tab[meio] == chave) {
-            // Chave encontrada no índice, busca o registro correspondente
+            // Chave encontrada no índice, busca o registro correspondente no arquivo
             fseek(arq, meio * sizeof(tipoitem), SEEK_SET);
             fread(&item, sizeof(tipoitem), 1, arq);
             cont->acessos++;
@@ -55,6 +67,7 @@ int acesso_sequencial_indexado(int qtd, int chave, dados *cont, FILE *arq) {
         }
     }
 
+    // Caso a chave não seja encontrada
     printf("Chave não encontrada!\n");
     printf("Número de transferências (leitura): %d\n", cont->acessos);
     printf("Número de comparações: %d\n", cont->comparacoes);

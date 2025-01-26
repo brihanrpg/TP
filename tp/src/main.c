@@ -41,26 +41,30 @@ int main(int argc, char *argv[]) {
         printf("Situações:\n1: Ordenado crescentemente\n2: Ordenado decrescentemente\n3: Ordenado aleatoriamente\n");
         return 0;
     }
-int acessos = 0, comparacoes = 0, contarq = 0;
+
+    int acessos = 0, comparacoes = 0, contarq = 0;
+    const char *nomeArquivo = NULL;
     FILE *arq;
     tipoitem aux;
     dados cont = {0, 0};  // Inicializa os contadores com zero
-srand(time(NULL));
+    srand(time(NULL));
+
     // Abrindo o arquivo de acordo com a situação especificada
     if (situacao == 1) {
-        arq = fopen("./data/crescente.bin", "w+");
+        nomeArquivo = "./data/crescente.bin";
         gerarCrescente(qtd);
-
     } else if (situacao == 2) {
-        arq = fopen("./data/decrescente.bin", "w+");
+        nomeArquivo = "./data/decrescente.bin";
         gerarDecrescente(qtd);
     } else {
-        arq = fopen("./data/aleatorio.bin", "w+");
+        nomeArquivo = "./data/aleatorio.bin";
         gerarAleatorio(qtd);
     }
 
+    arq = fopen(nomeArquivo, "rb"); // Abrindo o arquivo de leitura depois de definir o nome
     if (arq == NULL) {
-        printf("Erro 55na abertura do arquivo. Verifique o caminho e tente novamente.\n");
+        perror("Erro ao abrir o arquivo");
+        printf("Caminho do arquivo: %s\n", nomeArquivo);
         return 0;
     }
 
@@ -77,98 +81,96 @@ srand(time(NULL));
     // Executando o método de pesquisa conforme a escolha do usuário
     switch (metodo) {
     case 1:  // Pesquisa Sequencialmente Indexada
-    {
-        
-        
-        
-        if (acesso_sequencial_indexado(qtd, chave, &cont,arq)==1){
+        if (acesso_sequencial_indexado(qtd, chave, &cont, nomeArquivo) == 1) {
             printf("Registro de código %d foi localizado\n", chave);
         } else {
             printf("Registro de código %d não foi localizado\n", chave);
         }
         fclose(arq);
         break;
-    }
+
     case 2:  // Árvore Binária 
-    {
-        FILE *arquivo2 = fopen("../output/arvorebin.bin", "wb+");
-        tipoitem temp;
-        tipoitemarvore itemcompleto;
-        int pos = 0;
+        {
+            FILE *arquivo2 = fopen("../output/arvorebin.bin", "wb+");
+            tipoitem temp;
+            tipoitemarvore itemcompleto;
+            int pos = 0;
 
-        while (fread(&temp, sizeof(tipoitem), 1, arq) == 1 && pos < qtd) {
-            itemcompleto.chave = temp.chave;
-            itemcompleto.dado1 = temp.dado1;
-            strcpy(itemcompleto.dado2, temp.dado2);  // Cuidado com o uso de strcpy
-            itemcompleto.ant = -1;
-            itemcompleto.prox = -1;
-            itemcompleto.posicao = pos;
-            itemcompleto.atualizado = 0;
-            fwrite(&itemcompleto, sizeof(tipoitemarvore), 1, arquivo2);
-            pos++;
-            acessos++;
-        }
+            while (fread(&temp, sizeof(tipoitem), 1, arq) == 1 && pos < qtd) {
+                itemcompleto.chave = temp.chave;
+                itemcompleto.dado1 = temp.dado1;
+                strcpy(itemcompleto.dado2, temp.dado2);  // Cuidado com o uso de strcpy
+                itemcompleto.ant = -1;
+                itemcompleto.prox = -1;
+                itemcompleto.posicao = pos;
+                itemcompleto.atualizado = 0;
+                fwrite(&itemcompleto, sizeof(tipoitemarvore), 1, arquivo2);
+                pos++;
+                acessos++;
+            }
 
-        rewind(arquivo2);
-        for (int i = 1; i < pos; i++) {
-            atualizaPonteiroABP(i, arquivo2, &acessos, &comparacoes);
-        }
+            rewind(arquivo2);
+            for (int i = 1; i < pos; i++) {
+                atualizaPonteiroABP(i, arquivo2, &acessos, &comparacoes);
+            }
 
-        int retorno = procuraArvoreABP(chave, arquivo2, &acessos, &comparacoes);
-        if (retorno != -1) {
-            printf("Registro de código %d foi localizado\n", chave);
-        } else {
-            printf("Registro de código %d não foi localizado\n", chave);
+            int retorno = procuraArvoreABP(chave, arquivo2, &acessos, &comparacoes);
+            if (retorno != -1) {
+                printf("Registro de código %d foi localizado\n", chave);
+            } else {
+                printf("Registro de código %d não foi localizado\n", chave);
+            }
+            fclose(arquivo2);
         }
-        fclose(arquivo2);
         break;
-    }
+
     case 3:  // Árvore B
-    {
-        tipoitem temp;
-        TipoApontador Ap = NULL;
-        Inicializa(&Ap);
-        int cont = 0;
+        {
+            tipoitem temp;
+            TipoApontador Ap = NULL;
+            Inicializa(&Ap);
+            int cont = 0;
 
-        while (fread(&temp, sizeof(tipoitem), 1, arq) == 1 && cont < qtd) {
-            InsereAB(temp, &Ap, &comparacoes);
-            cont++;
-            acessos++;
-        }
-        fclose(arq);
+            while (fread(&temp, sizeof(tipoitem), 1, arq) == 1 && cont < qtd) {
+                InsereAB(temp, &Ap, &comparacoes);
+                cont++;
+                acessos++;
+            }
+            fclose(arq);
 
-        int retorno = PesquisaAB(chave, Ap, &comparacoes);
-        if (retorno > 0) {
-            printf("Registro de código %d foi localizado\n", chave);
-        } else {
-            printf("Registro de código %d não foi localizado\n", chave);
+            int retorno = PesquisaAB(chave, Ap, &comparacoes);
+            if (retorno > 0) {
+                printf("Registro de código %d foi localizado\n", chave);
+            } else {
+                printf("Registro de código %d não foi localizado\n", chave);
+            }
+            limpar(Ap);
         }
-        limpar(Ap);
         break;
-    }
+
     case 4:  // Árvore B*
-    {
-        tipoitem temp, pesquisado;
-        pesquisado.chave = chave;
-        TipoApontador2 Ap = NULL;
-        int cont = 0;
+        {
+            tipoitem temp, pesquisado;
+            pesquisado.chave = chave;
+            TipoApontador2 Ap = NULL;
+            int cont = 0;
 
-        while (fread(&temp, sizeof(tipoitem), 1, arq) == 1 && cont < qtd) {
-            InsereEstrela(temp, &Ap, &comparacoes);
-            cont++;
-            acessos++;
-        }
-        rewind(arq);
-        fclose(arq);
+            while (fread(&temp, sizeof(tipoitem), 1, arq) == 1 && cont < qtd) {
+                InsereEstrela(temp, &Ap, &comparacoes);
+                cont++;
+                acessos++;
+            }
+            rewind(arq);
+            fclose(arq);
 
-        int retorno = PesquisaEstrela(&pesquisado, &Ap, &comparacoes);
-        if (retorno) {
-            printf("Registro de código %d foi localizado\n", chave);
-        } else {
-            printf("Registro de código %d não foi localizado\n", chave);
+            int retorno = PesquisaEstrela(&pesquisado, &Ap, &comparacoes);
+            if (retorno) {
+                printf("Registro de código %d foi localizado\n", chave);
+            } else {
+                printf("Registro de código %d não foi localizado\n", chave);
+            }
         }
         break;
-    }
     }
 
     // Calculando o tempo de execução
@@ -178,4 +180,3 @@ srand(time(NULL));
 
     return 0;
 }
-
